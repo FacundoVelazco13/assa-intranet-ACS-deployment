@@ -2,7 +2,8 @@ services:
   alfresco:
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.alfresco.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.alfresco.rule=PathPrefix(`/alfresco`)"
+      - "traefik.http.routers.alfresco.priority=100"
       - "traefik.http.services.alfresco.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.alfresco-root-redirect.redirectregex.regex=^https?://[^/]+/([^/.]+)$$"
       - "traefik.http.middlewares.alfresco-root-redirect.redirectregex.replacement=$$0/"
@@ -18,6 +19,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.share.rule=PathPrefix(`/share`)"
+      - "traefik.http.routers.share.priority=100"
       - "traefik.http.services.share.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.share-limit.buffering.maxRequestBodyBytes=5368709120"
       - "traefik.http.middlewares.share-root-redirect.redirectregex.regex=/share$$"
@@ -30,13 +32,9 @@ services:
   content-app:
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.aca.rule=PathPrefix(`/content-app`)"
+      - "traefik.http.routers.aca.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.aca.priority=1"
       - "traefik.http.services.content-app.loadbalancer.server.port=8080"
-      - "traefik.http.middlewares.acaroot.stripprefix.prefixes=/content-app"
-      - "traefik.http.middlewares.acaforceslash.redirectregex.regex=^(.*/content-app)$$"
-      - "traefik.http.middlewares.acaforceslash.redirectregex.replacement=$${1}/"
-      - "traefik.http.middlewares.acachain.chain.middlewares=acaforceslash,acaroot"
-      - "traefik.http.routers.aca.middlewares=acachain@docker"
   proxy:
     image: traefik:3.1
     mem_limit: 128m

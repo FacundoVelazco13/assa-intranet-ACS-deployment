@@ -164,10 +164,7 @@ services:
       retries: 5
       start_period: 5s
   content-app:
-    image: alfresco-content-app-7.1.0:latest
-    build:
-      dockerfile: ./Dockerfile
-      context: ../assa-intranet-ACA-extension
+    image: facuv/assa-intranet-content-app:latest
     mem_limit: 1g
     restart: unless-stopped
     environment:
