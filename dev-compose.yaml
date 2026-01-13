@@ -2,10 +2,10 @@
 # - Alfresco Content Services
 # - Alfresco Content App
 # Empaquetados localmente. Sobre estos servicios se realizaran las extensiones.
-# 
+# Incluye servidor LDAP para pruebas de autenticación externa.
 # Comando:
 #
-# docker compose -f community-compose.yml up --build -d 
+# docker compose -f dev-compose.yaml up --build -d
 #
 services:
   alfresco:
@@ -48,7 +48,13 @@ services:
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/alfresco/api/-default-/public/alfresco/versions/1/probes/-ready-"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8080/alfresco/api/-default-/public/alfresco/versions/1/probes/-ready-",
+        ]
       interval: 30s
       timeout: 3s
       retries: 5
@@ -147,7 +153,17 @@ services:
       - "61616:61616" # OpenWire
       - "61613:61613" # STOMP
     healthcheck:
-      test: ["CMD", "/opt/activemq/bin/activemq", "query", "--objname", "type=Broker,brokerName=*,service=Health", "|", "grep", "Good"]
+      test:
+        [
+          "CMD",
+          "/opt/activemq/bin/activemq",
+          "query",
+          "--objname",
+          "type=Broker,brokerName=*,service=Health",
+          "|",
+          "grep",
+          "Good",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -173,3 +189,26 @@ services:
     extends:
       file: commons/base.yaml
       service: proxy
+
+  openldap:
+    image: osixia/openldap:latest
+    container_name: openldap
+    environment:
+      - LDAP_ORGANISATION=Aguas Santafesinas
+      - LDAP_DOMAIN=assa.com.ar
+      - LDAP_ADMIN_PASSWORD=admin
+      # Desactivamos TLS para desarrollo para evitar el error de "Strong Auth"
+      - LDAP_TLS=false
+    ports:
+      - "389:389"
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:latest
+    container_name: phpldapadmin
+    environment:
+      - PHPLDAPADMIN_LDAP_HOSTS=openldap
+      - PHPLDAPADMIN_HTTPS=false
+    ports:
+      - "8081:80"
+    depends_on:
+      - openldap

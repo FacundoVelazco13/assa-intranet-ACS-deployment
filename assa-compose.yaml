@@ -1,8 +1,20 @@
-# Compose file base de ACS community edition.
+# Docker compose file para PRODUCCIÓN - Intranet ASSA
+# - Alfresco Content Services
+# - Alfresco Content App
+# Empaquetados localmente. Sobre estos servicios se realizaran las extensiones.
+# El servicio "alfresco-content-services-intranet-platform" debe incluir la configuración de AD de ASSA.
+# Comando:
+#
+# docker compose -f assa-compose.yaml up --build -d 
+#
 services:
   alfresco:
-    image: docker.io/alfresco/alfresco-content-repository-community:25.2.0
-    mem_limit: 1900m
+    image: alfresco-content-services-intranet-platform:latest
+    build:
+      dockerfile: ./Dockerfile
+      context: ../assa-intranet-ACS-platform/target
+    mem_limit: 3g
+    restart: unless-stopped
     environment:
       JAVA_TOOL_OPTIONS: >-
         -Dencryption.keystore.type=JCEKS
@@ -43,19 +55,23 @@ services:
       retries: 5
       start_period: 1m
     volumes:
-      - /usr/local/tomcat/alf_data
+      - alfresco-data:/usr/local/tomcat/alf_data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     extends:
       file: commons/base.yaml
       service: alfresco
   transform-core-aio:
     image: alfresco/alfresco-transform-core-aio:5.2.0
-    mem_limit: 1536m
+    mem_limit: 2g
+    restart: unless-stopped
     environment:
       JAVA_OPTS: >-
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
-    ports:
-      - "8090:8090"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8090/ready"]
       interval: 20s
@@ -68,6 +84,7 @@ services:
   share:
     image: docker.io/alfresco/alfresco-share:25.2.0
     mem_limit: 1g
+    restart: unless-stopped
     environment:
       CSRF_FILTER_ORIGIN: http://localhost:8080
       CSRF_FILTER_REFERER: http://localhost:8080/share/.*
@@ -89,19 +106,25 @@ services:
     depends_on:
       alfresco:
         condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     extends:
       file: commons/base.yaml
       service: share
   postgres:
     image: postgres:16.5
-    mem_limit: 512m
+    mem_limit: 1g
+    restart: unless-stopped
     environment:
       - POSTGRES_PASSWORD=alfresco
       - POSTGRES_USER=alfresco
       - POSTGRES_DB=alfresco
     command: postgres -c max_connections=300 -c log_min_messages=LOG
-    ports:
-      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
       interval: 10s
@@ -111,6 +134,7 @@ services:
   solr6:
     image: docker.io/alfresco/alfresco-search-services:2.0.16
     mem_limit: 2g
+    restart: unless-stopped
     environment:
       # Solr needs to know how to register itself with Alfresco
       SOLR_ALFRESCO_HOST: "alfresco"
@@ -125,16 +149,14 @@ services:
       # SHARED SECRET VALUE
       JAVA_TOOL_OPTIONS: >-
         -Dalfresco.secureComms.secret=secret
-    ports:
-      - "8083:8983" # Browser port
+    volumes:
+      - solr-data:/opt/alfresco-search-services/data
   activemq:
     image: alfresco/alfresco-activemq:5.18-jre17-rockylinux8
     mem_limit: 1g
-    ports:
-      - "8161:8161" # Web Console
-      - "5672:5672" # AMQP
-      - "61616:61616" # OpenWire
-      - "61613:61613" # STOMP
+    restart: unless-stopped
+    volumes:
+      - activemq-data:/opt/activemq/data
     healthcheck:
       test: ["CMD", "/opt/activemq/bin/activemq", "query", "--objname", "type=Broker,brokerName=*,service=Health", "|", "grep", "Good"]
       interval: 10s
@@ -142,8 +164,12 @@ services:
       retries: 5
       start_period: 5s
   content-app:
-    image: alfresco/alfresco-content-app:7.0.0
-    mem_limit: 128m
+    image: alfresco-content-app-7.1.0:latest
+    build:
+      dockerfile: ./Dockerfile
+      context: ../assa-intranet-ACA-extension
+    mem_limit: 1g
+    restart: unless-stopped
     environment:
       APP_BASE_SHARE_URL: "http://localhost:8080/aca/#/preview/s"
     healthcheck:
@@ -155,23 +181,18 @@ services:
     extends:
       file: commons/base.yaml
       service: content-app
-  control-center:
-    image: quay.io/alfresco/alfresco-control-center:10.0.0
-    mem_limit: 128m
-    environment:
-      APP_CONFIG_PROVIDER: "ECM"
-      APP_CONFIG_AUTH_TYPE: "BASIC"
-      BASE_PATH: ./
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 10s
-      timeout: 1s
-      retries: 3
-      start_period: 1s
-    extends:
-      file: commons/base.yaml
-      service: control-center
   proxy:
+    restart: unless-stopped
     extends:
       file: commons/base.yaml
       service: proxy
+
+volumes:
+  alfresco-data:
+    driver: local
+  postgres-data:
+    driver: local
+  solr-data:
+    driver: local
+  activemq-data:
+    driver: local
