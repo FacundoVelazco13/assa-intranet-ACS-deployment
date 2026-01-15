@@ -1,20 +1,30 @@
-# Docker compose file para PRODUCCIÓN - Intranet ASSA
-# - Alfresco Content Services
-# - Alfresco Content App
-# Empaquetados localmente. Sobre estos servicios se realizaran las extensiones.
+# Compose file para PRODUCCIÓN - Intranet ASSA
+# - Imagen propia : Alfresco Content Services
+# - Imagen propia : Alfresco Content App
 # El servicio "alfresco-content-services-intranet-platform" debe incluir la configuración de AD de ASSA.
 # Comando:
-#
 # docker compose -f assa-compose.yaml up --build -d 
 #
 services:
   alfresco:
-    image: alfresco-content-services-intranet-platform:latest
-    build:
-      dockerfile: ./Dockerfile
-      context: ../assa-intranet-ACS-platform/target
+    image: facuv/assa-intranet-acs-amd64:1.0
     mem_limit: 3g
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.alfresco.rule=PathPrefix(`/alfresco`)"
+      - "traefik.http.routers.alfresco.priority=100"
+      - "traefik.http.services.alfresco.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.alfresco-root-redirect.redirectregex.regex=^https?://[^/]+/([^/.]+)$$"
+      - "traefik.http.middlewares.alfresco-root-redirect.redirectregex.replacement=$$0/"
+      - "traefik.http.middlewares.alfresco-chain.chain.middlewares=alfresco-root-redirect@docker"
+      - "traefik.http.routers.alfresco.middlewares=alfresco-chain@docker"
+      - "traefik.http.routers.solrapideny.rule=PathRegexp(`^/alfresco/(wc)?s(ervice)?/api/solr/.*$$`)"
+      - "traefik.http.middlewares.acsfakeauth.basicauth.users=fake:"
+      - "traefik.http.routers.solrapideny.middlewares=acsfakeauth@docker"
+      - "traefik.http.routers.alfrescomicrometer.rule=PathRegexp(`^/alfresco/(wc)?s(ervice)?/prometheus`)"
+      - "traefik.http.middlewares.prometheusipfilter.ipallowlist.sourcerange=127.0.0.0/8"
+      - "traefik.http.routers.alfrescomicrometer.middlewares=prometheusipfilter@docker"
     environment:
       JAVA_TOOL_OPTIONS: >-
         -Dencryption.keystore.type=JCEKS
@@ -37,12 +47,12 @@ services:
         -Dsolr.sharedSecret=secret
         -Dsolr.base.url=/solr
         -Dindex.subsystem.name=solr6
-        -Dshare.host=localhost
+        -Dshare.host=10.197.50.103
         -Dshare.port=8080
-        -Dalfresco.host=localhost
+        -Dalfresco.host=10.197.50.103
         -Dalfresco.port=8080
         -Dcsrf.filter.enabled=false
-        -Daos.baseUrlOverwrite=http://localhost:8080/alfresco/aos
+        -Daos.baseUrlOverwrite=http://10.197.50.103:8080/alfresco/aos
         -Dmessaging.broker.url="failover:(nio://activemq:61616)?timeout=3000&jms.useCompression=true"
         -Ddeployment.method=DOCKER_COMPOSE
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
@@ -61,9 +71,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    extends:
-      file: commons/base.yaml
-      service: alfresco
   transform-core-aio:
     image: alfresco/alfresco-transform-core-aio:5.2.0
     mem_limit: 2g
@@ -85,15 +92,28 @@ services:
     image: docker.io/alfresco/alfresco-share:25.2.0
     mem_limit: 1g
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.share.rule=PathPrefix(`/share`)"
+      - "traefik.http.routers.share.priority=100"
+      - "traefik.http.services.share.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.share-limit.buffering.maxRequestBodyBytes=5368709120"
+      - "traefik.http.middlewares.share-root-redirect.redirectregex.regex=/share$$"
+      - "traefik.http.middlewares.share-root-redirect.redirectregex.replacement=/share/"
+      - "traefik.http.middlewares.share-chain.chain.middlewares=share-root-redirect@docker,share-limit@docker"
+      - "traefik.http.routers.share.middlewares=share-chain@docker"
+      - "traefik.http.routers.proxiedsolrapideny.rule=PathRegexp(`^/share/proxy/alfresco(-(noauth|feed|api))?/api/solr/`)"
+      - "traefik.http.middlewares.sharefakeauth.basicauth.users=fake:"
+      - "traefik.http.routers.proxiedsolrapideny.middlewares=sharefakeauth@docker"
     environment:
-      CSRF_FILTER_ORIGIN: http://localhost:8080
-      CSRF_FILTER_REFERER: http://localhost:8080/share/.*
+      CSRF_FILTER_ORIGIN: http://10.197.50.103:8080
+      CSRF_FILTER_REFERER: http://10.197.50.103:8080/share/.*
       REPO_HOST: "alfresco"
       REPO_PORT: "8080"
       JAVA_OPTS: >-
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
-        -Dalfresco.host=localhost
+        -Dalfresco.host=10.197.50.103
         -Dalfresco.port=8080
         -Dalfresco.context=alfresco
         -Dalfresco.protocol=http
@@ -111,9 +131,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    extends:
-      file: commons/base.yaml
-      service: share
   postgres:
     image: postgres:16.5
     mem_limit: 1g
@@ -155,8 +172,6 @@ services:
     image: alfresco/alfresco-activemq:5.18-jre17-rockylinux8
     mem_limit: 1g
     restart: unless-stopped
-    volumes:
-      - activemq-data:/opt/activemq/data
     healthcheck:
       test: ["CMD", "/opt/activemq/bin/activemq", "query", "--objname", "type=Broker,brokerName=*,service=Health", "|", "grep", "Good"]
       interval: 10s
@@ -164,25 +179,49 @@ services:
       retries: 5
       start_period: 5s
   content-app:
-    image: facuv/assa-intranet-content-app:latest
+    image: facuv/assa-intranet-aca:1.0
     mem_limit: 1g
     restart: unless-stopped
-    environment:
-      APP_BASE_SHARE_URL: "http://localhost:8080/aca/#/preview/s"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.aca.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.aca.priority=1"
+      - "traefik.http.services.content-app.loadbalancer.server.port=8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 10s
       timeout: 1s
       retries: 3
       start_period: 1s
-    extends:
-      file: commons/base.yaml
-      service: content-app
   proxy:
+    image: traefik:3.1
+    mem_limit: 128m
     restart: unless-stopped
-    extends:
-      file: commons/base.yaml
-      service: proxy
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:8080"
+      - "--entrypoints.web.transport.respondingTimeouts.readTimeout=20m"
+      - "--entrypoints.web.transport.respondingTimeouts.writeTimeout=20m"
+      - "--entrypoints.web.transport.respondingTimeouts.idleTimeout=20m"
+      - "--entryPoints.traefik.address=:8888"
+      - "--accesslog=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--ping.entrypoint=web"
+      - "--ping=true"
+    ports:
+      - "8080:8080"
+      - "8888:8888"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - label=disable
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
   alfresco-data:
@@ -190,6 +229,4 @@ volumes:
   postgres-data:
     driver: local
   solr-data:
-    driver: local
-  activemq-data:
     driver: local

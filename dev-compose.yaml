@@ -9,10 +9,7 @@
 #
 services:
   alfresco:
-    image: alfresco-content-services-intranet-platform:development
-    build:
-      dockerfile: ./Dockerfile
-      context: ../assa-intranet-ACS-platform/target
+    image: facuv/assa-intranet-acs:latest
     mem_limit: 1900m
     environment:
       JAVA_TOOL_OPTIONS: >-
@@ -147,11 +144,12 @@ services:
   activemq:
     image: alfresco/alfresco-activemq:5.18-jre17-rockylinux8
     mem_limit: 1g
-    ports:
-      - "8161:8161" # Web Console
-      - "5672:5672" # AMQP
-      - "61616:61616" # OpenWire
-      - "61613:61613" # STOMP
+    # Puertos comentados para evitar conflictos - ActiveMQ funciona internamente
+    # ports:
+    #   - "8161:8161" # Web Console
+    #   - "5672:5672" # AMQP
+    #   - "61616:61616" # OpenWire
+    #   - "61613:61613" # STOMP
     healthcheck:
       test:
         [
@@ -195,6 +193,9 @@ services:
       - LDAP_TLS=false
     ports:
       - "389:389"
+    volumes:
+      - openldap-data:/var/lib/ldap
+      - openldap-config:/etc/ldap/slapd.d
 
   phpldapadmin:
     image: osixia/phpldapadmin:latest
@@ -211,3 +212,9 @@ services:
     extends:
       file: commons/base.yaml
       service: proxy
+
+volumes:
+  openldap-data:
+    driver: local
+  openldap-config:
+    driver: local
