@@ -44,6 +44,11 @@ services:
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
+        -Dcollabora.public.url=http://localhost:9980/
+        -Dcollabora.private.url=http://collabora:9980/
+        -Dalfresco.public.url=http://localhost:8080/alfresco/
+        -Dalfresco.private.url=http://alfresco:8080/alfresco/
+
     healthcheck:
       test:
         [
@@ -57,7 +62,7 @@ services:
       retries: 5
       start_period: 1m
     volumes:
-      - /usr/local/tomcat/alf_data
+      - alfresco-data:/usr/local/tomcat/alf_data
     extends:
       file: commons/base.yaml
       service: alfresco
@@ -116,6 +121,8 @@ services:
     command: postgres -c max_connections=300 -c log_min_messages=LOG
     ports:
       - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
       interval: 10s
@@ -141,6 +148,8 @@ services:
         -Dalfresco.secureComms.secret=secret
     ports:
       - "8083:8983" # Browser port
+    volumes:
+      - solr-data:/opt/alfresco-search-services/data
   activemq:
     image: alfresco/alfresco-activemq:5.18-jre17-rockylinux8
     mem_limit: 1g
@@ -166,8 +175,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+  
   content-app:
-    image: facuv/assa-intranet-content-app:latest
+    image: facuv/assa-intranet-content-app:2.0
     mem_limit: 1g
     restart: unless-stopped
     environment:
@@ -207,6 +217,15 @@ services:
       - "8081:80"
     depends_on:
       - openldap
+
+  collabora:
+    image: docker.io/collabora/code:24.04.12.4.1
+    privileged: true
+    environment:
+      extra_params: '--o:ssl.enable=false --o:server_name=localhost:9980'
+    ports:
+      - "9980:9980"
+  
   proxy:
     restart: unless-stopped
     extends:
@@ -214,6 +233,12 @@ services:
       service: proxy
 
 volumes:
+  alfresco-data:
+    driver: local
+  postgres-data:
+    driver: local
+  solr-data:
+    driver: local
   openldap-data:
     driver: local
   openldap-config:
