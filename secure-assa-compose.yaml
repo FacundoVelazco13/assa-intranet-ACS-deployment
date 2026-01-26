@@ -36,10 +36,6 @@ services:
         -Dsolr.sharedSecret=secret
         -Dsolr.base.url=/solr
         -Dindex.subsystem.name=solr6
-        -Dshare.host=10.197.50.103
-        -Dshare.port=8080
-        -Dalfresco.host=10.197.50.103
-        -Dalfresco.port=8080
         -Dcsrf.filter.enabled=false
         -Daos.baseUrlOverwrite=http://10.197.50.103:8080/alfresco/aos
         -Dmessaging.broker.url="failover:(nio://activemq:61616)?timeout=3000&jms.useCompression=true"
@@ -47,10 +43,14 @@ services:
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
+        -Dalfresco.protocol=https
+        -Dalfresco.host=10.197.50.103
+        -Dalfresco.port=443
+        -Dalfresco.public.url=https://10.197.50.103/alfresco/
+        -Dshare.protocol=https
+        -Dshare.host=10.197.50.103
+        -Dshare.port=443 
         -Dcollabora.public.url=https://office.aguassantafesinas.com.ar/
-        -Dcollabora.private.url=https://office.aguassantafesinas.com.ar/
-        -Dalfresco.public.url=http://10.197.50.103:8080/alfresco/
-        -Dalfresco.private.url=http://10.197.50.103:8080/alfresco/
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/alfresco/api/-default-/public/alfresco/versions/1/probes/-ready-"]
       interval: 30s
