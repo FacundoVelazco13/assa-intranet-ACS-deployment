@@ -58,8 +58,8 @@ services:
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
-        -Dcollabora.public.url=https://office.aguassantafesinas.com.ar/
-        -Dcollabora.private.url=https://office.aguassantafesinas.com.ar/
+        -Dcollabora.public.url=http://10.197.50.104:9980/
+        -Dcollabora.private.url=http://10.197.50.104:9980/
         -Dalfresco.public.url=http://10.197.50.103:8080/alfresco/
         -Dalfresco.private.url=http://10.197.50.103:8080/alfresco/
     healthcheck:
