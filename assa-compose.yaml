@@ -202,7 +202,7 @@ services:
     image: docker.io/collabora/code:24.04.12.4.1
     privileged: true
     environment:
-      extra_params: '--o:ssl.enable=false --o:server_name=localhost:9980'
+      extra_params: '--o:ssl.enable=false --o:server_name=10.197.50.103:9980'
     ports:
       - "9980:9980"
 
