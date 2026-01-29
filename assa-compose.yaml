@@ -58,12 +58,12 @@ services:
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
-        -Dcollabora.public.url=http://10.197.50.103:9980/
+        -Dcollabora.public.url=http://10.197.50.103:8080/
         -Dcollabora.private.url=http://collabora:9980/
         -Dalfresco.public.url=http://10.197.50.103:8080/alfresco/
         -Dalfresco.private.url=http://alfresco:8080/alfresco/
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/alfresco/api/-default-/public/alfresco/versions/1/probes/-ready-"]
+      test: ["CMD", "curl", "-f", "http://10.197.50.103:8080/alfresco/api/-default-/public/alfresco/versions/1/probes/-ready-"]
       interval: 30s
       timeout: 3s
       retries: 5
@@ -83,8 +83,9 @@ services:
       JAVA_OPTS: >-
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
+    # estos healcheck no funcionaran asi. Incluirlo al proxy o exponer el puerto.
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8090/ready"]
+      test: ["CMD", "curl", "-f", "http://10.197.50.103:8090/ready"]
       interval: 20s
       timeout: 2s
       retries: 3
@@ -122,7 +123,7 @@ services:
         -Dalfresco.context=alfresco
         -Dalfresco.protocol=http
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/share"]
+      test: ["CMD", "curl", "-f", "http://10.197.50.103:8080/share"]
       interval: 20s
       timeout: 2s
       retries: 3
@@ -192,7 +193,7 @@ services:
       - "traefik.http.routers.aca.priority=1"
       - "traefik.http.services.content-app.loadbalancer.server.port=8080"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "curl", "-f", "http://10.197.50.103:8080/"]
       interval: 10s
       timeout: 1s
       retries: 3
@@ -202,9 +203,18 @@ services:
     image: docker.io/collabora/code:24.04.12.4.1
     privileged: true
     environment:
-      extra_params: '--o:ssl.enable=false --o:server_name=10.197.50.103:9980'
-    ports:
-      - "9980:9980"
+      extra_params: >
+        --o:ssl.enable=false
+        --o:ssl.termination=false
+        --o:server_name=10.197.50.103:8080
+    expose:
+      - "9980"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.collabora.rule=PathPrefix(`/browser`) || PathPrefix(`/hosting`) || PathPrefix(`/cool`) || PathPrefix(`/wv`)"
+      - "traefik.http.routers.collabora.entrypoints=web"
+      - "traefik.http.services.collabora.loadbalancer.server.port=9980"
+  
 
   proxy:
     image: traefik:3.1
