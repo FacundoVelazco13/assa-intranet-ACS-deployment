@@ -209,7 +209,7 @@ services:
       # 2. aliasgroup1: CRÍTICO. Le decimos explícitamente que acepte peticiones
       #    desde http://10.197.50.103:8080 aunque el storage se llame "alfresco".
       extra_params: >
-        - extra_params=--o:ssl.enable=false --o:ssl.termination=false --o:server_name=.*:8080 --o:aliasgroup1=http://.*:8080 --o:dictionaries=es_ES
+        - extra_params=--o:ssl.enable=false --o:ssl.termination=false --o:server_name=10.197.50.103:8080 --o:aliasgroup1=http://.*:8080 --o:dictionaries=es_ES
     expose:
       - "9980"
     labels:

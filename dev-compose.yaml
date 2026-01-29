@@ -223,7 +223,7 @@ services:
       - "9980"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.collabora.rule=PathPrefix(`/browser`) || PathPrefix(`/hosting`) || PathPrefix(`/cool`) || PathPrefix(`/wv`)"
+      - "traefik.http.routers.collabora.rule=PathPrefix(`/browser`) || PathPrefix(`/hosting`) || PathPrefix(`/cool`) || PathPrefix(`/wv`) || PathPrefix(`/etc`)"
       - "traefik.http.routers.collabora.entrypoints=web"
       - "traefik.http.services.collabora.loadbalancer.server.port=9980"
   
