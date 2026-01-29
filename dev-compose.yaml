@@ -44,11 +44,10 @@ services:
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
-        -Dcollabora.public.url=http://localhost:9980/
+        -Dcollabora.public.url=http://localhost:8080/
         -Dcollabora.private.url=http://collabora:9980/
         -Dalfresco.public.url=http://localhost:8080/alfresco/
         -Dalfresco.private.url=http://alfresco:8080/alfresco/
-
     healthcheck:
       test:
         [
@@ -153,12 +152,6 @@ services:
   activemq:
     image: alfresco/alfresco-activemq:5.18-jre17-rockylinux8
     mem_limit: 1g
-    # Puertos comentados para evitar conflictos - ActiveMQ funciona internamente
-    # ports:
-    #   - "8161:8161" # Web Console
-    #   - "5672:5672" # AMQP
-    #   - "61616:61616" # OpenWire
-    #   - "61613:61613" # STOMP
     healthcheck:
       test:
         [
@@ -222,9 +215,17 @@ services:
     image: docker.io/collabora/code:24.04.12.4.1
     privileged: true
     environment:
-      extra_params: '--o:ssl.enable=false --o:server_name=localhost:9980'
-    ports:
-      - "9980:9980"
+      extra_params: >
+        --o:ssl.enable=false
+        --o:ssl.termination=false
+        --o:server_name=localhost:8080
+    expose:
+      - "9980"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.collabora.rule=PathPrefix(`/browser`) || PathPrefix(`/hosting`) || PathPrefix(`/cool`) || PathPrefix(`/wv`)"
+      - "traefik.http.routers.collabora.entrypoints=web"
+      - "traefik.http.services.collabora.loadbalancer.server.port=9980"
   
   proxy:
     restart: unless-stopped
