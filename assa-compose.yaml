@@ -204,7 +204,7 @@ services:
     privileged: true
     restart: unless-stopped
     environment:
-      extra_params: '--o:ssl.enable=false --o:ssl.termination=false --o:server_name=10.197.50.103:8080'
+      extra_params: '--o:ssl.enable=false --o:ssl.termination=false --o:server_name=10.197.50.103:8080 --o:aliasgroup1=http://.*:8080'
     expose:
       - "9980"
     labels:
