@@ -58,8 +58,8 @@ services:
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
-        -Dcollabora.public.url=http://10.197.50.103:8080/
-        -Dalfresco.public.url=http://10.197.50.103:8080/alfresco/
+        -Dcollabora.public.url=https://office.aguassantafesinas.com.ar/
+        -Dalfresco.public.url=https://acs.aguassantafesinas.com.ar/alfresco/
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/alfresco/api/-default-/public/alfresco/versions/1/probes/-ready-"]
       interval: 30s
@@ -196,29 +196,6 @@ services:
       timeout: 1s
       retries: 3
       start_period: 1s  
- 
-  collabora:
-    image: docker.io/collabora/code:24.04.12.4.1
-    privileged: true
-    restart: unless-stopped
-    container_name: collabora
-    cap_add:
-      - SYS_ADMIN
-    environment:
-      - aliasgroup1=10.197.50.103:8080
-      - DONT_GEN_SSL_CERT=true
-      - 'extra_params=--o:ssl.enable=false'
-      - LC_CTYPE=C.UTF-8
-    expose:
-      - 9980:9980/tcp
-    labels:
-      - "traefik.enable=true"
-      # Usamos la sintaxis de Traefik v3 con el operador OR (||)
-      - "traefik.http.routers.collabora.rule=PathPrefix(`/browser`) || PathPrefix(`/hosting`) || PathPrefix(`/cool`) || PathPrefix(`/wv`)"
-      - "traefik.http.routers.collabora.entrypoints=web"
-      - "traefik.http.services.collabora.loadbalancer.server.port=9980"
-  
-
   proxy:
     image: traefik:3.1
     mem_limit: 256m
