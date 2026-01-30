@@ -61,7 +61,7 @@ services:
       retries: 5
       start_period: 1m
     volumes:
-      - alfresco-data:/usr/local/tomcat/alf_data
+      - alf-dev-data:/usr/local/tomcat/alf_data
     extends:
       file: commons/base.yaml
       service: alfresco
@@ -121,7 +121,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-dev-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
       interval: 10s
@@ -148,7 +148,7 @@ services:
     ports:
       - "8083:8983" # Browser port
     volumes:
-      - solr-data:/opt/alfresco-search-services/data
+      - solr-dev-data:/opt/alfresco-search-services/data
   activemq:
     image: alfresco/alfresco-activemq:5.18-jre17-rockylinux8
     mem_limit: 1g
@@ -170,7 +170,7 @@ services:
       start_period: 5s
   
   content-app:
-    image: facuv/assa-intranet-content-app:2.0
+    image: facuv/assa-intranet-content-app:latest
     mem_limit: 1g
     restart: unless-stopped
     environment:
@@ -234,13 +234,13 @@ services:
       service: proxy
 
 volumes:
-  alfresco-data:
-    driver: local
-  postgres-data:
-    driver: local
-  solr-data:
-    driver: local
+  alf-dev-data:
+    external: true
+  postgres-dev-data:
+    external: true
+  solr-dev-data:
+    external: true
   openldap-data:
-    driver: local
+    external: true
   openldap-config:
-    driver: local
+    external: true
