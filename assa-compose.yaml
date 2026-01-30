@@ -195,16 +195,22 @@ services:
       interval: 10s
       timeout: 1s
       retries: 3
-      start_period: 1s
-  
+      start_period: 1s  
+ 
   collabora:
     image: docker.io/collabora/code:24.04.12.4.1
     privileged: true
     restart: unless-stopped
+    container_name: collabora
+    cap_add:
+      - SYS_ADMIN
     environment:
-      extra_params: '--o:ssl.enable=false --o:ssl.termination=false --o:server_name=10.197.50.103:8080 --o:aliasgroup1=http://10.197.50.103|10\.197\.50\.103|alfresco:8080'
+      - aliasgroup1=10.197.50.103:8080
+      - DONT_GEN_SSL_CERT=true
+      - 'extra_params=--o:ssl.enable=false --o:ssl.termination=true'
+      - LC_CTYPE=C.UTF-8
     expose:
-      - "9980"
+      - 9980:9980/tcp
     labels:
       - "traefik.enable=true"
       # Usamos la sintaxis de Traefik v3 con el operador OR (||)
