@@ -212,7 +212,7 @@ services:
       - openldap
 
   collabora:
-    image: docker.io/collabora/code:24.04.12.4.1
+    image: docker.io/collabora/code:25.04.8.2.1
     privileged: true
     environment:
       extra_params: >
