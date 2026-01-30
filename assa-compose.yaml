@@ -206,11 +206,7 @@ services:
       - SYS_ADMIN
     environment:
       - aliasgroup1=https://acs.aguassantafesinas.com.ar:443
-      - DONT_GEN_SSL_CERT=true
       - 'extra_params=--o:ssl.enable=false --o:ssl.termination=true'
-      - LC_CTYPE=C.UTF-8
-    expose:
-      - 9980:9980/tcp
     labels:
       - "traefik.enable=true"
       # Usamos la sintaxis de Traefik v3 con el operador OR (||)
