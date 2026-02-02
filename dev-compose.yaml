@@ -149,6 +149,8 @@ services:
       - "8083:8983" # Browser port
     volumes:
       - solr-dev-data:/opt/alfresco-search-services/data
+      - solr-dev-home:/opt/alfresco-search-services/solrhome
+      - solr-dev-keystores:/opt/alfresco-search-services/keystores
   activemq:
     image: alfresco/alfresco-activemq:5.18-jre17-rockylinux8
     mem_limit: 1g
@@ -168,6 +170,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+    volumes:
+      - activemq-dev-conf:/opt/activemq/conf
+      - activemq-dev-data:/opt/activemq/data
+      - activemq-dev-log:/var/log/activemq
+
   
   content-app:
     image: facuv/assa-intranet-content-app:latest
@@ -210,7 +217,8 @@ services:
       - "8081:80"
     depends_on:
       - openldap
-
+    volumes:
+      - phpldapadmin:/var/www/phpldapadmin
   collabora:
     image: docker.io/collabora/code:25.04.8.2.1
     privileged: true
@@ -240,7 +248,19 @@ volumes:
     external: true
   solr-dev-data:
     external: true
+  solr-dev-home:
+    external: true
+  solr-dev-keystores:
+    external: true
+  activemq-dev-conf:
+    external: true
+  activemq-dev-data:
+    external: true
+  activemq-dev-log:
+    external: true
   openldap-data:
     external: true
   openldap-config:
+    external: true
+  phpldapadmin:
     external: true

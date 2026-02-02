@@ -171,6 +171,8 @@ services:
         -Dalfresco.secureComms.secret=secret
     volumes:
       - solr-data:/opt/alfresco-search-services/data
+      - solr-home:/opt/alfresco-search-services/solrhome
+      - solr-keystores:/opt/alfresco-search-services/keystores
   activemq:
     image: alfresco/alfresco-activemq:5.18-jre17-rockylinux8
     mem_limit: 1g
@@ -181,6 +183,10 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+    volumes:
+      - activemq-conf:/opt/activemq/conf
+      - activemq-data:/opt/activemq/data
+      - activemq-log:/var/log/activemq
   content-app:
     image: facuv/assa-intranet-aca-amd64:2.0
     mem_limit: 1g
@@ -248,4 +254,14 @@ volumes:
   postgres-data:
     external: true
   solr-data:
+    external: true
+  solr-home:
+    external: true
+  solr-keystores:
+    external: true
+  activemq-conf:
+    external: true
+  activemq-data:
+    external: true
+  activemq-log:
     external: true
