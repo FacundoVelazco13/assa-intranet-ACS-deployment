@@ -188,7 +188,7 @@ services:
       - activemq-data:/opt/activemq/data
       - activemq-log:/var/log/activemq
   content-app:
-    image: facuv/assa-intranet-aca-amd64:2.0
+    image: facuv/assa-intranet-aca-amd64:latest
     mem_limit: 1g
     restart: unless-stopped
     labels:
