@@ -1,21 +1,30 @@
 # Repositorio de archivos de despliegue en Docker de la implementación de ACS de ASSA
 
+##
+
 ### Dev compose
-> Configuración para desarrollo y pruebas finales. (Local, no apto para ASSA)
+
+> Configuración para desarrollo y pruebas finales. (Local, no apto para ASSA).
+Toma configuración de _commons_
 
 ### ASSA compose
+
 > Configuración para despliegue de pruebas en ASSA.
 
 ### ASSA SSL compose
+>
 > Configuración para despliegue final en ASSA.
 
 Las configuraciones estan basadas en : [Alfresco/acs-deployment](https://github.com/Alfresco/acs-deployment)
 
+### Secure compose
+>
+> Pruebas utilizando https desde el proxy de ACS, no utilizar.
 ---
+
 ### DESPLIEGUE
 
-> ./run.sh up
-
+> ./run.sh up \
 > ./run.sh down
 
 TODO list para desplegar
