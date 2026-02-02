@@ -244,8 +244,8 @@ services:
 
 volumes:
   alfresco-data:
-    driver: local
+    external: true
   postgres-data:
-    driver: local
+    external: true
   solr-data:
-    driver: local
+    external: true

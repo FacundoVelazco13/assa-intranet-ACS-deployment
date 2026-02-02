@@ -4,6 +4,21 @@
 > Configuración para desarrollo y pruebas finales. (Local, no apto para ASSA)
 
 ### ASSA compose
-> Configuración para despliegue en ASSA.
+> Configuración para despliegue de pruebas en ASSA.
 
-Ambas configuraciones estan basadas en : [Alfresco/acs-deployment](https://github.com/Alfresco/acs-deployment)
+### ASSA SSL compose
+> Configuración para despliegue final en ASSA.
+
+Las configuraciones estan basadas en : [Alfresco/acs-deployment](https://github.com/Alfresco/acs-deployment)
+
+---
+### DESPLIEGUE
+
+> ./run.sh up
+
+> ./run.sh down
+
+TODO list para desplegar
+
+- Todas las configuraciones utilizar volumenes externos. Estos deben existir previo a ejecutar _docker compose up_.
+Por eso utilizar el script run.sh, que verifica esta creación previamente. _Ingresar en el contenido del script el compose file y nombre de volumenes_
