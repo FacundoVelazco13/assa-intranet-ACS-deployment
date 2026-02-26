@@ -7,7 +7,7 @@
 #
 services:
   alfresco:
-    image: facuv/assa-intranet-acs-amd64:2.1
+    image: facuv/assa-intranet-acs-amd64:2.2
     mem_limit: 3g
     restart: unless-stopped
     labels:
@@ -58,7 +58,7 @@ services:
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
-        -Dcollabora.public.url=https://acs.aguassantafesinas.com.ar/
+        -Dcollabora.public.url=https://office.aguassantafesinas.com.ar/
         -Dalfresco.public.url=https://acs.aguassantafesinas.com.ar/alfresco/
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/alfresco/api/-default-/public/alfresco/versions/1/probes/-ready-"]
@@ -188,7 +188,7 @@ services:
       - activemq-data:/opt/activemq/data
       - activemq-log:/var/log/activemq
   content-app:
-    image: facuv/assa-intranet-aca-amd64:2.0
+    image: facuv/assa-intranet-aca-amd64:latest
     mem_limit: 1g
     restart: unless-stopped
     labels:
@@ -202,21 +202,6 @@ services:
       timeout: 1s
       retries: 3
       start_period: 1s  
- 
-  collabora:
-    image: docker.io/collabora/code:24.04.12.4.1
-    privileged: true
-    restart: unless-stopped
-    container_name: collabora
-    environment:
-      - aliasgroup1=https://acs.aguassantafesinas.com.ar:443
-      - 'extra_params=--o:ssl.enable=false --o:ssl.termination=true'
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.collabora.rule=PathPrefix(`/browser`) || PathPrefix(`/hosting`) || PathPrefix(`/cool`) || PathPrefix(`/wv`)"
-      - "traefik.http.routers.collabora.entrypoints=web"
-      - "traefik.http.services.collabora.loadbalancer.server.port=9980"
-  
 
   proxy:
     image: traefik:3.1

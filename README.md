@@ -9,10 +9,6 @@ Toma configuración de _commons_
 
 ### ASSA compose
 
-> Configuración para despliegue de pruebas en ASSA.
-
-### ASSA SSL compose
->
 > Configuración para despliegue final en ASSA.
 
 Las configuraciones estan basadas en : [Alfresco/acs-deployment](https://github.com/Alfresco/acs-deployment)
