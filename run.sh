@@ -3,10 +3,23 @@
 
 set -e
 
-#FILE="assa-compose.yaml"
-#VOLUMENES=(alfresco-data postgres-data solr-data solr-home solr-keystores activemq-conf activemq-data activemq-log)
-FILE="dev-compose.yaml"
-VOLUMENES=(alf-dev-data postgres-dev-data solr-dev-data solr-dev-home solr-dev-keystores activemq-dev-conf activemq-dev-data activemq-dev-log openldap-data openldap-config phpldapadmin)
+TARGET_ENV="${2:-dev}"
+
+case "$TARGET_ENV" in
+  dev)
+    FILE="dev-compose.yaml"
+    VOLUMENES=(alf-dev-data postgres-dev-data solr-dev-data solr-dev-home solr-dev-keystores activemq-dev-conf activemq-dev-data activemq-dev-log openldap-data openldap-config phpldapadmin)
+    ;;
+  prod|assa)
+    FILE="assa-compose.yaml"
+    VOLUMENES=(alfresco-data postgres-data solr-data solr-home solr-keystores activemq-conf activemq-data activemq-log)
+    ;;
+  *)
+    echo "Uso: $0 {up|down} [dev|prod]"
+    exit 1
+    ;;
+esac
+
 case "$1" in
   up)
     for VOLUMEN in "${VOLUMENES[@]}"; do
@@ -25,7 +38,7 @@ case "$1" in
     docker compose -f "$FILE" down
     ;;
   *)
-    echo "Uso: $0 {up|down}"
+    echo "Uso: $0 {up|down} [dev|prod]"
     exit 1
     ;;
 esac
