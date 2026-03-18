@@ -15,10 +15,10 @@ Las configuraciones estan basadas en : [Alfresco/acs-deployment](https://github.
 
 ---
 
-### DESPLIEGUE
+### DESPLIEGUE para pruebas
 
-> ./run.sh up \
-> ./run.sh down
+> ./run.sh up dev \
+> ./run.sh down dev
 
 TODO list para desplegar
 
