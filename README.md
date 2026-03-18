@@ -13,9 +13,6 @@ Toma configuración de _commons_
 
 Las configuraciones estan basadas en : [Alfresco/acs-deployment](https://github.com/Alfresco/acs-deployment)
 
-### Secure compose
->
-> Pruebas utilizando https desde el proxy de ACS, no utilizar.
 ---
 
 ### DESPLIEGUE
