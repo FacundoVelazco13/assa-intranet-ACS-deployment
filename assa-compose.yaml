@@ -7,7 +7,7 @@
 #
 services:
   alfresco:
-    image: facuv/assa-intranet-acs-amd64:2.4
+    image: facuv/assa-intranet-acs-amd64:2.5
     mem_limit: 3g
     restart: unless-stopped
     labels:
