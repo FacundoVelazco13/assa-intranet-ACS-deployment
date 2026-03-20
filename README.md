@@ -23,4 +23,4 @@ Las configuraciones estan basadas en : [Alfresco/acs-deployment](https://github.
 TODO list para desplegar
 
 - Todas las configuraciones utilizar volumenes externos. Estos deben existir previo a ejecutar _docker compose up_.
-Por eso utilizar el script run.sh, que verifica esta creación previamente. _Ingresar en el contenido del script el compose file y nombre de volumenes_
+Por eso utilizar el script run.sh, que verifica esta creación previamente.
