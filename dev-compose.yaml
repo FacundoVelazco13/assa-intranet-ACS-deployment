@@ -9,7 +9,7 @@
 #
 services:
   alfresco:
-    image: facuv/assa-intranet-acs:2.5
+    image: facuv/assa-intranet-acs:latest
     mem_limit: 1900m
     environment:
       JAVA_TOOL_OPTIONS: >-
