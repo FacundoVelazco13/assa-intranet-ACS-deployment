@@ -13,17 +13,14 @@ Toma configuración de _commons_
 
 Las configuraciones estan basadas en : [Alfresco/acs-deployment](https://github.com/Alfresco/acs-deployment)
 
-### Secure compose
->
-> Pruebas utilizando https desde el proxy de ACS, no utilizar.
 ---
 
-### DESPLIEGUE
+### DESPLIEGUE para pruebas
 
-> ./run.sh up \
-> ./run.sh down
+> ./run.sh up dev \
+> ./run.sh down dev
 
 TODO list para desplegar
 
 - Todas las configuraciones utilizar volumenes externos. Estos deben existir previo a ejecutar _docker compose up_.
-Por eso utilizar el script run.sh, que verifica esta creación previamente. _Ingresar en el contenido del script el compose file y nombre de volumenes_
+Por eso utilizar el script run.sh, que verifica esta creación previamente.
