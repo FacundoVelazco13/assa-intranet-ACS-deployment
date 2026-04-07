@@ -54,6 +54,8 @@ services:
         -Dcsrf.filter.enabled=false
         -Daos.baseUrlOverwrite=http://10.197.50.103:8080/alfresco/aos
         -Dmessaging.broker.url="failover:(nio://activemq:61616)?timeout=3000&jms.useCompression=true"
+        -Dmessaging.broker.username=admin
+        -Dmessaging.broker.password=admin
         -Ddeployment.method=DOCKER_COMPOSE
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
         -XX:MinRAMPercentage=50
@@ -74,7 +76,7 @@ services:
         max-size: "10m"
         max-file: "3"
   transform-core-aio:
-    image: alfresco/alfresco-transform-core-aio:5.2.0
+    image: alfresco/alfresco-transform-core-aio:5.4.0
     mem_limit: 2g
     restart: unless-stopped
     environment:
@@ -92,7 +94,7 @@ services:
       activemq:
         condition: service_healthy
   share:
-    image: docker.io/alfresco/alfresco-share:25.2.0
+    image: docker.io/alfresco/alfresco-share:26.1.0
     mem_limit: 1g
     restart: unless-stopped
     labels:
@@ -135,7 +137,7 @@ services:
         max-size: "10m"
         max-file: "3"
   postgres:
-    image: postgres:16.5
+    image: postgres:17.9
     mem_limit: 1g
     restart: unless-stopped
     environment:
@@ -152,7 +154,7 @@ services:
       retries: 3
       start_period: 5s
   solr6:
-    image: docker.io/alfresco/alfresco-search-services:2.0.16
+    image: docker.io/alfresco/alfresco-search-services:2.0.18
     mem_limit: 2g
     restart: unless-stopped
     environment:
@@ -174,11 +176,24 @@ services:
       - solr-home:/opt/alfresco-search-services/solrhome
       - solr-keystores:/opt/alfresco-search-services/keystores
   activemq:
-    image: alfresco/alfresco-activemq:5.18-jre17-rockylinux8
+    image: alfresco/alfresco-activemq:6.2.1-jre17-rockylinux8
     mem_limit: 1g
     restart: unless-stopped
+    environment:
+      - ACTIVEMQ_ADMIN_LOGIN=admin
+      - ACTIVEMQ_ADMIN_PASSWORD=admin
     healthcheck:
-      test: ["CMD-SHELL", "/opt/activemq/bin/activemq query --objname 'type=Broker,brokerName=*,service=Health' | grep -q Good"]
+      test:
+        [
+          "CMD",
+          "/opt/activemq/bin/activemq",
+          "query",
+          "--objname",
+          "type=Broker,brokerName=*,service=Health",
+          "|",
+          "grep",
+          "Good",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
