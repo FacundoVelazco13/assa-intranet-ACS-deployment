@@ -207,6 +207,7 @@ services:
     environment:
       APP_CONFIG_AUTH_TYPE: "BASIC"
       APP_CONFIG_ECM_HOST: "https://acs.aguassantafesinas.com.ar"
+      APP_CONFIG_ITOP_PEOPLE_ENDPOINT: "/alfresco/s/itop/data?class=Person"
     mem_limit: 1g
     restart: unless-stopped
     labels:
