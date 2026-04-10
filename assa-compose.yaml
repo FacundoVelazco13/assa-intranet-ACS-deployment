@@ -63,8 +63,8 @@ services:
         -Dcollabora.public.url=https://office.aguassantafesinas.com.ar/
         -Dalfresco.public.url=https://acs.aguassantafesinas.com.ar/alfresco/
         -Dcom.sun.net.ssl.checkRevocation=false 
-        -Djdk.tls.disabledAlgorithms="" 
-        -Djdk.tls.client.protocols=TLSv1,TLSv1.1,TLSv1.2
+        -Djdk.tls.disabledAlgorithms=
+        -Djdk.jar.disabledAlgorithms=
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/alfresco/api/-default-/public/alfresco/versions/1/probes/-ready-"]
       interval: 30s
