@@ -1,11 +1,31 @@
-# Docker compose file modificado en base a community-compose.yaml. Se agregan los servicios de:
-# - Alfresco Content Services
-# - Alfresco Content App
-# Empaquetados localmente. Sobre estos servicios se realizaran las extensiones.
-# Incluye servidor LDAP para pruebas de autenticación externa.
-# Comando:
+# Docker compose file para DESARROLLO - Intranet ASSA
+# Stack completo para desarrollo y testing de extensiones Alfresco
 #
-# docker compose -f dev-compose.yaml up --build -d
+# Servicios incluidos:
+# - Alfresco Content Services (ACS) - facuv/assa-intranet-acs
+# - Alfresco Share - Interfaz web clásica
+# - Alfresco Content App (ACA) - Interfaz moderna
+# - OOP Extension - Out-of-Process Extension (Java 21 + Event Handlers)
+# - PostgreSQL - Base de datos
+# - Solr - Motor de búsqueda
+# - ActiveMQ - Mensajería para eventos
+# - Transform Core AIO - Servicios de transformación
+# - Collabora - Editor de documentos online
+# - OpenLDAP + phpLDAPadmin - Para pruebas de autenticación externa
+#
+# El servicio OOP Extension consume eventos de Alfresco vía ActiveMQ y ejecuta
+# lógica de negocio de forma independiente.
+#
+# Comando:
+#   docker compose -f dev-compose.yaml up -d
+#
+# URLs de acceso:
+#   - Alfresco:     http://localhost:8080/alfresco
+#   - Share:        http://localhost:8080/share
+#   - Content App:  http://localhost:8080/
+#   - OOP Health:   http://localhost:9081/actuator/health
+#   - phpLDAPadmin: http://localhost:8081
+#   - Solr:         http://localhost:8083
 #
 services:
   alfresco:
@@ -180,14 +200,73 @@ services:
       - activemq-dev-data:/opt/activemq/data
       - activemq-dev-log:/var/log/activemq
 
-  
+  # ============================================================================
+  # OOP EXTENSION - Out-of-Process Extension for Alfresco
+  # ============================================================================
+  # Este servicio escucha eventos de Alfresco a través de ActiveMQ y ejecuta
+  # lógica de negocio de forma independiente del repositorio.
+  # 
+  # Características:
+  # - Escucha eventos: node.created, node.updated, node.deleted
+  # - Consume REST API de Alfresco para operaciones CRUD
+  # - Procesamiento asíncrono de eventos
+  # - Java 21 con Virtual Threads
+  #
+  # Documentación: Ver README.md y AGENT.md en assa-intranet-ACS-OOP-extension/
+  # ============================================================================
+  oop-extension:
+    image: facuv/assa-intranet-acs-oop-extension:latest
+    container_name: oop-extension-dev
+    mem_limit: 512m
+    restart: unless-stopped
+    extends:
+      file: commons/base.yaml
+      service: oop-extension
+    environment:
+      # Spring Boot standard properties
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_ACTIVEMQ_BROKER_URL=tcp://activemq:61616
+      - SPRING_ACTIVEMQ_USER=admin
+      - SPRING_ACTIVEMQ_PASSWORD=admin
+      # Alfresco REST API configuration
+      - CONTENT_SERVICE_URL=http://alfresco:8080
+      - CONTENT_SERVICE_SECURITY_BASICAUTH_USERNAME=admin
+      - CONTENT_SERVICE_SECURITY_BASICAUTH_PASSWORD=admin
+      # iTop API configuration
+      - ITOP_API_URL=https://itopdes.aguassantafesinas.com.ar/webservices/rest.php
+      - ITOP_AUTH_USER=Usritopapi
+      - ITOP_AUTH_PWD=Carte123!
+      - ITOP_API_VERSION=1.3
+      # Tarifacion DB configuration
+      - TARIFACION_DB_HOST=10.197.49.29
+      - TARIFACION_DB_PORT=1433
+      - TARIFACION_DB_NAME=Tarifacion
+      - TARIFACION_DB_USER=x_fvelaz
+      - TARIFACION_DB_PASSWORD=assa2026
+      - TARIFACION_DB_ENABLED=true
+      # JVM optimization
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+    ports:
+      - "9081:8081"  # Puerto externo 9081 mapeado al 8081 interno
+    depends_on:
+      alfresco:
+        condition: service_healthy
+      activemq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   content-app:
     image: facuv/assa-intranet-content-app:latest
     mem_limit: 1g
     restart: unless-stopped
     environment:
       APP_BASE_SHARE_URL: "http://localhost:8080/aca/#/preview/s"
-      APP_CONFIG_ITOP_PEOPLE_ENDPOINT: "/alfresco/s/itop/data?class=Person&mock=true"
+      APP_CONFIG_ITOP_PEOPLE_ENDPOINT: "/alfresco-oop/api/itop/data?className=Person&mock=true"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 10s

@@ -35,6 +35,14 @@ services:
       - "traefik.http.routers.aca.rule=PathPrefix(`/`)"
       - "traefik.http.routers.aca.priority=1"
       - "traefik.http.services.content-app.loadbalancer.server.port=8080"
+  oop-extension:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.oop-extension.rule=PathPrefix(`/alfresco-oop`)"
+      - "traefik.http.routers.oop-extension.priority=100"
+      - "traefik.http.services.oop-extension.loadbalancer.server.port=8081"
+      - "traefik.http.middlewares.oop-extension-stripprefix.stripprefix.prefixes=/alfresco-oop"
+      - "traefik.http.routers.oop-extension.middlewares=oop-extension-stripprefix@docker"
   proxy:
     image: traefik:3.1
     mem_limit: 256MB

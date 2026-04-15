@@ -1,9 +1,27 @@
 # Compose file para PRODUCCIÓN - Intranet ASSA
-# - Imagen propia : Alfresco Content Services
-# - Imagen propia : Alfresco Content App
-# El servicio "alfresco-content-services-intranet-platform" debe incluir la configuración de AD de ASSA.
+# =================================================
+# Stack de producción para Intranet ASSA
+# 
+# Servicios principales:
+# - Alfresco Content Services (ACS) - facuv/assa-intranet-acs-amd64
+# - Alfresco Share - Interfaz web clásica
+# - Alfresco Content App (ACA) - facuv/assa-intranet-aca-amd64
+# - OOP Extension - facuv/assa-intranet-acs-oop-extension-amd64
+# - PostgreSQL, Solr, ActiveMQ, Transform Core
+# - Traefik como reverse proxy
+#
+# OOP Extension:
+# Out-of-Process Extension que escucha eventos de Alfresco vía ActiveMQ
+# y ejecuta lógica de negocio de forma independiente.
+# - Java 21 con Virtual Threads
+# - Escucha eventos: node.created, node.updated, node.deleted
+# - Consume REST API de Alfresco
+#
 # Comando:
-# docker compose -f assa-compose.yaml up --build -d 
+#   docker compose -f assa-compose.yaml up -d
+#
+# Nota: Este archivo debe ser modificado manualmente.
+# Para implementar cambios del OOP Extension, contactar al equipo de desarrollo.
 #
 services:
   alfresco:
@@ -205,12 +223,88 @@ services:
       - activemq-conf:/opt/activemq/conf
       - activemq-data:/opt/activemq/data
       - activemq-log:/var/log/activemq
+
+  # ============================================================================
+  # OOP EXTENSION - Out-of-Process Extension for Alfresco (PRODUCCIÓN)
+  # ============================================================================
+  # Servicio de extensión out-of-process que escucha eventos de Alfresco
+  # a través de ActiveMQ y ejecuta lógica de negocio de forma independiente.
+  #
+  # NOTA DE IMPLEMENTACIÓN:
+  # Este servicio requiere que la imagen Docker esté disponible en Docker Hub:
+  #   facuv/assa-intranet-acs-oop-extension-amd64:latest
+  #
+  # Para actualizar la imagen en producción:
+  #   1. Compilar nueva versión: ./build-push.sh <version> prod
+  #   2. Actualizar tag en este archivo si es necesario
+  #   3. Reiniciar servicio: docker compose -f assa-compose.yaml up -d oop-extension
+  #
+  # Health Check: http://localhost:9081/actuator/health
+  # Logs: docker logs assa-oop-extension
+  # ============================================================================
+  oop-extension:
+    image: facuv/assa-intranet-acs-oop-extension-amd64:latest
+    container_name: assa-oop-extension
+    mem_limit: 512m
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.oop-extension.rule=PathPrefix(`/alfresco-oop`)"
+      - "traefik.http.routers.oop-extension.priority=100"
+      - "traefik.http.services.oop-extension.loadbalancer.server.port=8081"
+      - "traefik.http.middlewares.oop-extension-stripprefix.stripprefix.prefixes=/alfresco-oop"
+      - "traefik.http.routers.oop-extension.middlewares=oop-extension-stripprefix@docker"
+    environment:
+      # Spring Boot standard properties
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_ACTIVEMQ_BROKER_URL=tcp://activemq:61616
+      - SPRING_ACTIVEMQ_USER=admin
+      - SPRING_ACTIVEMQ_PASSWORD=admin
+      # Alfresco REST API configuration
+      - CONTENT_SERVICE_URL=http://alfresco:8080
+      - CONTENT_SERVICE_SECURITY_BASICAUTH_USERNAME=admin
+      - CONTENT_SERVICE_SECURITY_BASICAUTH_PASSWORD=admin
+      # iTop API configuration
+      - ITOP_API_URL=https://itopdes.aguassantafesinas.com.ar/webservices/rest.php
+      - ITOP_AUTH_USER=Usritopapi
+      - ITOP_AUTH_PWD=Carte123!
+      - ITOP_API_VERSION=1.3
+      # Tarifacion DB configuration
+      - TARIFACION_DB_HOST=10.197.49.29
+      - TARIFACION_DB_PORT=1433
+      - TARIFACION_DB_NAME=Tarifacion
+      - TARIFACION_DB_USER=x_fvelaz
+      - TARIFACION_DB_PASSWORD=assa2026
+      - TARIFACION_DB_ENABLED=true
+      # JVM optimization
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+    # Puerto expuesto solo para monitoreo interno (health checks)
+    # No se expone externamente a través de Traefik por seguridad
+    ports:
+      - "127.0.0.1:9081:8081"
+    depends_on:
+      alfresco:
+        condition: service_healthy
+      activemq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   content-app:
     image: facuv/assa-intranet-aca-amd64:latest
     environment:
       APP_CONFIG_AUTH_TYPE: "BASIC"
       APP_CONFIG_ECM_HOST: "https://acs.aguassantafesinas.com.ar"
-      APP_CONFIG_ITOP_PEOPLE_ENDPOINT: "/alfresco/s/itop/data?class=Person"
+      APP_CONFIG_ITOP_PEOPLE_ENDPOINT: "/alfresco-oop/api/itop/data?className=Person"
     mem_limit: 1g
     restart: unless-stopped
     labels:

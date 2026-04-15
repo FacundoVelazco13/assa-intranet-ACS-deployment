@@ -32,13 +32,48 @@ case "$1" in
     done
     echo "[INFO] Levantando el stack con $FILE..."
     docker compose -f "$FILE" up --build -d
+    echo ""
+    echo "============================================"
+    echo "URLs de acceso:"
+    echo "============================================"
+    case "$TARGET_ENV" in
+      dev)
+        echo "  - Alfresco:     http://localhost:8080/alfresco"
+        echo "  - Share:        http://localhost:8080/share"
+        echo "  - Content App:  http://localhost:8080/"
+        echo "  - OOP Health:   http://localhost:9081/actuator/health"
+        echo "  - OOP iTop API: http://localhost:8080/alfresco-oop/api/itop/data"
+        echo "  - phpLDAPadmin: http://localhost:8081"
+        echo "  - Solr:         http://localhost:8083"
+        ;;
+      prod|assa)
+        echo "  - Alfresco:     http://localhost:8080/alfresco"
+        echo "  - Share:        http://localhost:8080/share"
+        echo "  - Content App:  http://localhost:8080/"
+        echo "  - OOP Health:   http://localhost:9081/actuator/health (solo localhost)"
+        echo "  - OOP iTop API: http://localhost:8080/alfresco-oop/api/itop/data"
+        ;;
+    esac
+    echo "============================================"
     ;;
   down)
     echo "[INFO] Bajando el stack con $FILE..."
     docker compose -f "$FILE" down
     ;;
+  status)
+    echo "[INFO] Estado de los servicios..."
+    docker compose -f "$FILE" ps
+    echo ""
+    echo "============================================"
+    echo "Health checks:"
+    echo "============================================"
+    echo "  - Alfresco:      curl -s http://localhost:8080/alfresco/api/-default-/public/alfresco/versions/1/probes/-ready-"
+    echo "  - OOP Extension: curl -s http://localhost:9081/actuator/health"
+    echo "  - iTop API:      curl -s http://localhost:8080/alfresco-oop/api/itop/cache/status"
+    echo "============================================"
+    ;;
   *)
-    echo "Uso: $0 {up|down} [dev|prod]"
+    echo "Uso: $0 {up|down|status} [dev|prod]"
     exit 1
     ;;
 esac
