@@ -39,7 +39,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.oop-extension.rule=PathPrefix(`/alfresco-oop`)"
-      - "traefik.http.routers.oop-extension.priority=100"
+      - "traefik.http.routers.oop-extension.priority=200"
       - "traefik.http.services.oop-extension.loadbalancer.server.port=8081"
       - "traefik.http.middlewares.oop-extension-stripprefix.stripprefix.prefixes=/alfresco-oop"
       - "traefik.http.routers.oop-extension.middlewares=oop-extension-stripprefix@docker"
