@@ -83,7 +83,7 @@ services:
         -Ds3.accessKey=devuser2
         -Ds3.secretKey=devpasswrd2
         -Ds3.bucketName=intranet-des
-        -Ds3.endpoint=http://minioqas.apsf.local:9001/
+        -Ds3.endpoint=http://minioqas.apsf.local:9000
         -Ds3.regionName=us-east-1
         -Ds3.pathStyleAccess=true
     healthcheck:
