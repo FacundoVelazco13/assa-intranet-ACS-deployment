@@ -8,7 +8,7 @@ TARGET_ENV="${2:-dev}"
 case "$TARGET_ENV" in
   dev)
     FILE="dev-compose.yaml"
-    VOLUMENES=(alf-dev-data postgres-dev-data solr-dev-data solr-dev-home solr-dev-keystores activemq-dev-conf activemq-dev-data activemq-dev-log openldap-data openldap-config phpldapadmin)
+    VOLUMENES=(alf-dev-data postgres-dev-data solr-dev-data solr-dev-home solr-dev-keystores activemq-dev-conf activemq-dev-data activemq-dev-log openldap-data openldap-config phpldapadmin minio-dev-volume)
     ;;
   prod|assa)
     FILE="assa-compose.yaml"

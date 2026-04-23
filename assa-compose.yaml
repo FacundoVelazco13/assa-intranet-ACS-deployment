@@ -80,9 +80,12 @@ services:
         -XX:MaxRAMPercentage=80
         -Dcollabora.public.url=https://office.aguassantafesinas.com.ar/
         -Dalfresco.public.url=https://acs.aguassantafesinas.com.ar/alfresco/
-        -Dcom.sun.net.ssl.checkRevocation=false 
-        -Djdk.tls.disabledAlgorithms=
-        -Djdk.jar.disabledAlgorithms=
+        -Ds3.accessKey=devuser2
+        -Ds3.secretKey=devpasswrd2
+        -Ds3.bucketName=intranet-des
+        -Ds3.endpoint=http://minioqas.apsf.local:9001/
+        -Ds3.regionName=us-east-1
+        -Ds3.pathStyleAccess=true
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/alfresco/api/-default-/public/alfresco/versions/1/probes/-ready-"]
       interval: 30s
@@ -223,25 +226,7 @@ services:
       - activemq-conf:/opt/activemq/conf
       - activemq-data:/opt/activemq/data
       - activemq-log:/var/log/activemq
-
-  # ============================================================================
-  # OOP EXTENSION - Out-of-Process Extension for Alfresco (PRODUCCIÓN)
-  # ============================================================================
-  # Servicio de extensión out-of-process que escucha eventos de Alfresco
-  # a través de ActiveMQ y ejecuta lógica de negocio de forma independiente.
-  #
-  # NOTA DE IMPLEMENTACIÓN:
-  # Este servicio requiere que la imagen Docker esté disponible en Docker Hub:
-  #   facuv/assa-intranet-acs-oop-extension-amd64:latest
-  #
-  # Para actualizar la imagen en producción:
-  #   1. Compilar nueva versión: ./build-push.sh <version> prod
-  #   2. Actualizar tag en este archivo si es necesario
-  #   3. Reiniciar servicio: docker compose -f assa-compose.yaml up -d oop-extension
-  #
-  # Health Check: http://localhost:9081/actuator/health
-  # Logs: docker logs assa-oop-extension
-  # ============================================================================
+ 
   oop-extension:
     image: facuv/assa-intranet-acs-oop-extension-amd64:latest
     container_name: assa-oop-extension

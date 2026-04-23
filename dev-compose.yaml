@@ -70,6 +70,12 @@ services:
         -Dcollabora.private.url=http://collabora:9980/
         -Dalfresco.public.url=http://localhost:8080/alfresco/
         -Dalfresco.private.url=http://alfresco:8080/alfresco/
+        -Ds3.accessKey=minioadmin
+        -Ds3.secretKey=minioadmin
+        -Ds3.bucketName=alfresco
+        -Ds3.endpoint=http://minio:9000
+        -Ds3.regionName=us-east-1
+        -Ds3.pathStyleAccess=true
     healthcheck:
       test:
         [
@@ -200,20 +206,6 @@ services:
       - activemq-dev-data:/opt/activemq/data
       - activemq-dev-log:/var/log/activemq
 
-  # ============================================================================
-  # OOP EXTENSION - Out-of-Process Extension for Alfresco
-  # ============================================================================
-  # Este servicio escucha eventos de Alfresco a través de ActiveMQ y ejecuta
-  # lógica de negocio de forma independiente del repositorio.
-  # 
-  # Características:
-  # - Escucha eventos: node.created, node.updated, node.deleted
-  # - Consume REST API de Alfresco para operaciones CRUD
-  # - Procesamiento asíncrono de eventos
-  # - Java 21 con Virtual Threads
-  #
-  # Documentación: Ver README.md y AGENT.md en assa-intranet-ACS-OOP-extension/
-  # ============================================================================
   oop-extension:
     image: facuv/assa-intranet-acs-oop-extension:latest
     container_name: oop-extension-dev
@@ -320,6 +312,35 @@ services:
       - "traefik.http.routers.collabora.entrypoints=web"
       - "traefik.http.services.collabora.loadbalancer.server.port=9980"
   
+  minio:
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-dev-volume:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb --ignore-existing myminio/alfresco;
+      mc anonymous set download myminio/alfresco;
+      exit 0;
+      "
+
   proxy:
     restart: unless-stopped
     extends:
@@ -348,4 +369,6 @@ volumes:
   openldap-config:
     external: true
   phpldapadmin:
+    external: true
+  minio-dev-volume:
     external: true
