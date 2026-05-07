@@ -261,6 +261,19 @@ services:
       - TARIFACION_DB_USER=x_fvelaz
       - TARIFACION_DB_PASSWORD=assa2026
       - TARIFACION_DB_ENABLED=true
+      # Photos
+      - RRHH_DB_ENABLED=true
+      - RRHH_DB_HOST=10.197.49.29
+      - RRHH_DB_PORT=1433
+      - RRHH_DB_NAME=RRHH
+      - RRHH_DB_USER=x_fvelaz
+      - RRHH_DB_PASSWORD=assa2026
+      - S3_ACCESS_KEY=devuser2
+      - S3_SECRET_KEY=devpasswrd2
+      - S3_BUCKET_NAME=intranet-des
+      - S3_ENDPOINT=http://minioqas.apsf.local:9000
+      - S3_REGION_NAME=us-east-1
+      - S3_PATH_STYLE_ACCESS=true
       # JVM optimization
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
     # Puerto expuesto solo para monitoreo interno (health checks)
