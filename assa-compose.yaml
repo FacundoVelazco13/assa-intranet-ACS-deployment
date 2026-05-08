@@ -251,8 +251,8 @@ services:
       - CONTENT_SERVICE_SECURITY_BASICAUTH_PASSWORD=admin
       # iTop API configuration
       - ITOP_API_URL=https://itopdes.aguassantafesinas.com.ar/webservices/rest.php
-      - ITOP_AUTH_USER=Usritopapi
-      - ITOP_AUTH_PWD=Carte123!
+      - ITOP_AUTH_USER=userapint
+      - ITOP_AUTH_PWD=Assa@2026
       - ITOP_API_VERSION=1.3
       # Tarifacion DB configuration
       - TARIFACION_DB_HOST=10.197.49.29
