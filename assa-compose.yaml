@@ -319,8 +319,6 @@ services:
 
   proxy:
     image: traefik:3.6
-    environment:
-      - DOCKER_API_VERSION=1.41
     mem_limit: 256m
     restart: unless-stopped
     command:
