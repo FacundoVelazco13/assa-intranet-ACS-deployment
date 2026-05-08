@@ -44,15 +44,13 @@ services:
       - "traefik.http.middlewares.oop-extension-stripprefix.stripprefix.prefixes=/alfresco-oop"
       - "traefik.http.routers.oop-extension.middlewares=oop-extension-stripprefix@docker"
   proxy:
-    image: traefik:3.1
-    mem_limit: 256MB
+    image: traefik:3.6
+    mem_limit: 128m
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--entrypoints.web.address=:8080"
       - "--entrypoints.web.transport.respondingTimeouts.readTimeout=20m"
-      - "--entrypoints.web.transport.respondingTimeouts.writeTimeout=20m"
-      - "--entrypoints.web.transport.respondingTimeouts.idleTimeout=20m"
       - "--entryPoints.traefik.address=:8888"
       - "--accesslog=true"
       - "--providers.docker.exposedByDefault=false"

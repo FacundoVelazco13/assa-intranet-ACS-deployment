@@ -318,26 +318,22 @@ services:
       start_period: 1s  
 
   proxy:
-    image: traefik:3.1
+    image: traefik:3.6
     environment:
       - DOCKER_API_VERSION=1.41
     mem_limit: 256m
     restart: unless-stopped
     command:
-      - "--api.insecure=false"
+      - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--entrypoints.web.address=:8080"
-      - "--entrypoints.web.transport.respondingTimeouts.readTimeout=20m"
-      - "--entrypoints.web.transport.respondingTimeouts.writeTimeout=20m"
-      - "--entrypoints.web.transport.respondingTimeouts.idleTimeout=20m"
-      - "--entryPoints.traefik.address=:8888"
+      - "--entrypoints.web.transport.respondingTimeouts.readTimeout=2m"
       - "--accesslog=true"
       - "--providers.docker.exposedByDefault=false"
       - "--ping.entrypoint=web"
       - "--ping=true"
     ports:
       - "8080:8080"
-      - "8888:8888"
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 20s
