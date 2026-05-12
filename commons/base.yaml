@@ -2,7 +2,7 @@ services:
   alfresco:
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.alfresco.rule=PathPrefix(`/alfresco`)"
+      - "traefik.http.routers.alfresco.rule=PathPrefix(`/alfresco`) || PathPrefix(`/api-explorer`)"
       - "traefik.http.routers.alfresco.priority=100"
       - "traefik.http.services.alfresco.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.alfresco-root-redirect.redirectregex.regex=^https?://[^/]+/([^/.]+)$$"
