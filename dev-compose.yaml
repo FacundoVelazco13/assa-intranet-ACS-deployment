@@ -271,7 +271,6 @@ services:
     mem_limit: 1g
     restart: unless-stopped
     environment:
-      APP_BASE_SHARE_URL: "http://localhost:8080/aca/#/preview/s"
       APP_CONFIG_ITOP_PEOPLE_ENDPOINT: "/alfresco-oop/api/itop/data?className=Person&mock=true"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
