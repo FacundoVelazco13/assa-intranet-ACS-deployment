@@ -1,0 +1,412 @@
+# Docker compose file para EC2 (AWS x86) - Intranet ASSA
+# Stack completo para demo pública en HTTP :8080
+#
+# Comando:
+#   PUBLIC_HOST=<dns-o-ip-publica> docker compose -f EC2-compose.yaml up -d
+#
+# URLs de acceso (ejemplo con PUBLIC_HOST):
+#   - Alfresco:    http://PUBLIC_HOST:8080/alfresco
+#   - Share:       http://PUBLIC_HOST:8080/share
+#   - Content App: http://PUBLIC_HOST:8080/
+
+services:
+  alfresco:
+    image: facuv/assa-intranet-acs:amd64
+    platform: linux/amd64
+    mem_limit: 1900m
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.alfresco.rule=PathPrefix(`/alfresco`) || PathPrefix(`/api-explorer`)"
+      - "traefik.http.routers.alfresco.priority=100"
+      - "traefik.http.services.alfresco.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.alfresco-root-redirect.redirectregex.regex=^https?://[^/]+/([^/.]+)$$"
+      - "traefik.http.middlewares.alfresco-root-redirect.redirectregex.replacement=$$0/"
+      - "traefik.http.middlewares.alfresco-chain.chain.middlewares=alfresco-root-redirect@docker"
+      - "traefik.http.routers.alfresco.middlewares=alfresco-chain@docker"
+      - "traefik.http.routers.solrapideny.rule=PathRegexp(`^/alfresco/(wc)?s(ervice)?/api/solr/.*$$`)"
+      - "traefik.http.middlewares.acsfakeauth.basicauth.users=fake:"
+      - "traefik.http.routers.solrapideny.middlewares=acsfakeauth@docker"
+      - "traefik.http.routers.alfrescomicrometer.rule=PathRegexp(`^/alfresco/(wc)?s(ervice)?/prometheus`)"
+      - "traefik.http.middlewares.prometheusipfilter.ipallowlist.sourcerange=127.0.0.0/8"
+      - "traefik.http.routers.alfrescomicrometer.middlewares=prometheusipfilter@docker"
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Dencryption.keystore.type=JCEKS
+        -Dencryption.cipherAlgorithm=DESede/CBC/PKCS5Padding
+        -Dencryption.keyAlgorithm=DESede
+        -Dencryption.keystore.location=/usr/local/tomcat/shared/classes/alfresco/extension/keystore/keystore
+        -Dmetadata-keystore.password=mp6yc0UD9e
+        -Dmetadata-keystore.aliases=metadata
+        -Dmetadata-keystore.metadata.password=oKIWzVdEdA
+        -Dmetadata-keystore.metadata.algorithm=DESede
+      JAVA_OPTS: >-
+        -Ddb.driver=org.postgresql.Driver
+        -Ddb.username=alfresco
+        -Ddb.password=alfresco
+        -Ddb.url=jdbc:postgresql://postgres:5432/alfresco
+        -Dsolr.host=solr6
+        -Dsolr.port=8983
+        -Dsolr.http.connection.timeout=1000
+        -Dsolr.secureComms=secret
+        -Dsolr.sharedSecret=secret
+        -Dsolr.base.url=/solr
+        -Dindex.subsystem.name=solr6
+        -Dshare.host=${PUBLIC_HOST:-localhost}
+        -Dshare.port=8080
+        -Dalfresco.host=${PUBLIC_HOST:-localhost}
+        -Dalfresco.port=8080
+        -Dcsrf.filter.enabled=false
+        -Daos.baseUrlOverwrite=http://${PUBLIC_HOST:-localhost}:8080/alfresco/aos
+        -Dmessaging.broker.url="failover:(nio://activemq:61616)?timeout=3000&jms.useCompression=true"
+        -Dmessaging.broker.username=admin
+        -Dmessaging.broker.password=admin
+        -Ddeployment.method=DOCKER_COMPOSE
+        -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
+        -XX:MinRAMPercentage=50
+        -XX:MaxRAMPercentage=80
+        -Dcollabora.public.url=http://${PUBLIC_HOST:-localhost}:8080/
+        -Dcollabora.private.url=http://collabora:9980/
+        -Dalfresco.public.url=http://${PUBLIC_HOST:-localhost}:8080/alfresco/
+        -Dalfresco.private.url=http://alfresco:8080/alfresco/
+        -Ds3.accessKey=minioadmin
+        -Ds3.secretKey=minioadmin
+        -Ds3.bucketName=alfresco
+        -Ds3.endpoint=http://minio:9000
+        -Ds3.regionName=us-east-1
+        -Ds3.pathStyleAccess=true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8080/alfresco/api/-default-/public/alfresco/versions/1/probes/-ready-",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+      start_period: 1m
+    volumes:
+      - alf-ec2-data:/usr/local/tomcat/alf_data
+
+  transform-core-aio:
+    image: alfresco/alfresco-transform-core-aio:5.4.0
+    platform: linux/amd64
+    mem_limit: 1536m
+    restart: unless-stopped
+    environment:
+      JAVA_OPTS: >-
+        -XX:MinRAMPercentage=50
+        -XX:MaxRAMPercentage=80
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/ready"]
+      interval: 20s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      activemq:
+        condition: service_healthy
+
+  share:
+    image: docker.io/alfresco/alfresco-share:26.1.0
+    platform: linux/amd64
+    mem_limit: 1g
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.share.rule=PathPrefix(`/share`)"
+      - "traefik.http.routers.share.priority=100"
+      - "traefik.http.services.share.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.share-limit.buffering.maxRequestBodyBytes=5368709120"
+      - "traefik.http.middlewares.share-root-redirect.redirectregex.regex=/share$$"
+      - "traefik.http.middlewares.share-root-redirect.redirectregex.replacement=/share/"
+      - "traefik.http.middlewares.share-chain.chain.middlewares=share-root-redirect@docker,share-limit@docker"
+      - "traefik.http.routers.share.middlewares=share-chain@docker"
+      - "traefik.http.routers.proxiedsolrapideny.rule=PathRegexp(`^/share/proxy/alfresco(-(noauth|feed|api))?/api/solr/`)"
+      - "traefik.http.middlewares.sharefakeauth.basicauth.users=fake:"
+      - "traefik.http.routers.proxiedsolrapideny.middlewares=sharefakeauth@docker"
+    environment:
+      CSRF_FILTER_ORIGIN: http://${PUBLIC_HOST:-localhost}:8080
+      CSRF_FILTER_REFERER: http://${PUBLIC_HOST:-localhost}:8080/share/.*
+      REPO_HOST: "alfresco"
+      REPO_PORT: "8080"
+      JAVA_OPTS: >-
+        -XX:MinRAMPercentage=50
+        -XX:MaxRAMPercentage=80
+        -Dalfresco.host=${PUBLIC_HOST:-localhost}
+        -Dalfresco.port=8080
+        -Dalfresco.context=alfresco
+        -Dalfresco.protocol=http
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/share"]
+      interval: 20s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      alfresco:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17.9
+    platform: linux/amd64
+    mem_limit: 512m
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=alfresco
+      - POSTGRES_USER=alfresco
+      - POSTGRES_DB=alfresco
+    command: postgres -c max_connections=300 -c log_min_messages=LOG
+    volumes:
+      - postgres-ec2-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  solr6:
+    image: docker.io/alfresco/alfresco-search-services:2.0.18
+    platform: linux/amd64
+    mem_limit: 2g
+    restart: unless-stopped
+    environment:
+      SOLR_ALFRESCO_HOST: "alfresco"
+      SOLR_ALFRESCO_PORT: "8080"
+      SOLR_SOLR_HOST: "solr6"
+      SOLR_SOLR_PORT: "8983"
+      SOLR_CREATE_ALFRESCO_DEFAULTS: "alfresco,archive"
+      ALFRESCO_SECURE_COMMS: "secret"
+      JAVA_TOOL_OPTIONS: >-
+        -Dalfresco.secureComms.secret=secret
+    volumes:
+      - solr-ec2-data:/opt/alfresco-search-services/data
+      - solr-ec2-home:/opt/alfresco-search-services/solrhome
+      - solr-ec2-keystores:/opt/alfresco-search-services/keystores
+
+  activemq:
+    image: alfresco/alfresco-activemq:6.2.1-jre17-rockylinux8
+    platform: linux/amd64
+    mem_limit: 1g
+    restart: unless-stopped
+    environment:
+      - ACTIVEMQ_ADMIN_LOGIN=admin
+      - ACTIVEMQ_ADMIN_PASSWORD=admin
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/activemq/bin/activemq",
+          "query",
+          "--objname",
+          "type=Broker,brokerName=*,service=Health",
+          "|",
+          "grep",
+          "Good",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    volumes:
+      - activemq-ec2-conf:/opt/activemq/conf
+      - activemq-ec2-data:/opt/activemq/data
+      - activemq-ec2-log:/var/log/activemq
+
+  oop-extension:
+    image: facuv/assa-intranet-acs-oop-extension-amd64:latest
+    platform: linux/amd64
+    container_name: oop-extension-ec2
+    mem_limit: 512m
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.oop-extension.rule=PathPrefix(`/alfresco-oop`)"
+      - "traefik.http.routers.oop-extension.priority=200"
+      - "traefik.http.services.oop-extension.loadbalancer.server.port=8081"
+      - "traefik.http.middlewares.oop-extension-stripprefix.stripprefix.prefixes=/alfresco-oop"
+      - "traefik.http.routers.oop-extension.middlewares=oop-extension-stripprefix@docker"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_ACTIVEMQ_BROKER_URL=tcp://activemq:61616
+      - SPRING_ACTIVEMQ_USER=admin
+      - SPRING_ACTIVEMQ_PASSWORD=admin
+      - CONTENT_SERVICE_URL=http://alfresco:8080
+      - CONTENT_SERVICE_SECURITY_BASICAUTH_USERNAME=admin
+      - CONTENT_SERVICE_SECURITY_BASICAUTH_PASSWORD=admin
+      - ITOP_API_URL=https://itopdes.aguassantafesinas.com.ar/webservices/rest.php
+      - ITOP_AUTH_USER=userapint
+      - ITOP_AUTH_PWD=Assa@2026
+      - ITOP_API_VERSION=1.3
+      - TARIFACION_DB_HOST=10.197.49.29
+      - TARIFACION_DB_PORT=1433
+      - TARIFACION_DB_NAME=Tarifacion
+      - TARIFACION_DB_USER=x_fvelaz
+      - TARIFACION_DB_PASSWORD=assa2026
+      - TARIFACION_DB_ENABLED=true
+      - RRHH_DB_ENABLED=true
+      - RRHH_DB_HOST=10.197.49.29
+      - RRHH_DB_PORT=1433
+      - RRHH_DB_NAME=RRHH
+      - RRHH_DB_USER=x_fvelaz
+      - RRHH_DB_PASSWORD=assa2026
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_BUCKET_NAME=alfresco
+      - S3_ENDPOINT=http://minio:9000
+      - S3_REGION_NAME=us-east-1
+      - S3_PATH_STYLE_ACCESS=true
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+    ports:
+      - "127.0.0.1:9081:8081"
+    depends_on:
+      alfresco:
+        condition: service_healthy
+      activemq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  content-app:
+    image: facuv/assa-intranet-aca-amd64:latest
+    platform: linux/amd64
+    mem_limit: 1g
+    restart: unless-stopped
+    environment:
+      APP_CONFIG_AUTH_TYPE: "BASIC"
+      APP_CONFIG_ECM_HOST: "http://${PUBLIC_HOST:-localhost}:8080"
+      APP_CONFIG_ITOP_PEOPLE_ENDPOINT: "/alfresco-oop/api/itop/data?className=Person&mock=true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 1s
+      retries: 3
+      start_period: 1s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.aca.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.aca.priority=1"
+      - "traefik.http.services.content-app.loadbalancer.server.port=8080"
+
+  openldap:
+    image: osixia/openldap:latest
+    platform: linux/amd64
+    container_name: openldap
+    restart: unless-stopped
+    environment:
+      - LDAP_ORGANISATION=Aguas Santafesinas
+      - LDAP_DOMAIN=assa.com.ar
+      - LDAP_ADMIN_PASSWORD=admin
+      - LDAP_TLS=false
+    volumes:
+      - openldap-ec2-data:/var/lib/ldap
+      - openldap-ec2-config:/etc/ldap/slapd.d
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:latest
+    platform: linux/amd64
+    container_name: phpldapadmin
+    restart: unless-stopped
+    environment:
+      - PHPLDAPADMIN_LDAP_HOSTS=openldap
+      - PHPLDAPADMIN_HTTPS=false
+    depends_on:
+      - openldap
+    volumes:
+      - phpldapadmin-ec2:/var/www/phpldapadmin
+
+  collabora:
+    image: docker.io/collabora/code:25.04.8.2.1
+    platform: linux/amd64
+    privileged: true
+    restart: unless-stopped
+    environment:
+      extra_params: >
+        --o:ssl.enable=false
+        --o:ssl.termination=false
+        --o:server_name=${PUBLIC_HOST:-localhost}:8080
+    expose:
+      - "9980"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.collabora.rule=PathPrefix(`/browser`) || PathPrefix(`/hosting`) || PathPrefix(`/cool`) || PathPrefix(`/wv`) || PathPrefix(`/etc`)"
+      - "traefik.http.routers.collabora.entrypoints=web"
+      - "traefik.http.services.collabora.loadbalancer.server.port=9980"
+
+  minio:
+    image: minio/minio:latest
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-ec2-volume:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    platform: linux/amd64
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb --ignore-existing myminio/alfresco;
+      mc anonymous set download myminio/alfresco;
+      exit 0;
+      "
+
+  proxy:
+    image: traefik:3.6
+    platform: linux/amd64
+    mem_limit: 256m
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:8080"
+      - "--entrypoints.web.transport.respondingTimeouts.readTimeout=20m"
+      - "--accesslog=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--ping.entrypoint=web"
+      - "--ping=true"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - label=disable
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  alf-ec2-data:
+  postgres-ec2-data:
+  solr-ec2-data:
+  solr-ec2-home:
+  solr-ec2-keystores:
+  activemq-ec2-conf:
+  activemq-ec2-data:
+  activemq-ec2-log:
+  openldap-ec2-data:
+  openldap-ec2-config:
+  phpldapadmin-ec2:
+  minio-ec2-volume:
