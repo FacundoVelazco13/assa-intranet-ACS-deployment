@@ -287,7 +287,7 @@ services:
     environment:
       APP_CONFIG_AUTH_TYPE: "BASIC"
       APP_CONFIG_ECM_HOST: "http://${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}:8080"
-      APP_CONFIG_ITOP_PEOPLE_ENDPOINT: "/alfresco-oop/api/itop/data?className=Person&mock=true"
+      APP_CONFIG_ITOP_PEOPLE_ENDPOINT: "/alfresco-oop/api/itop/data?className=Person"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 10s
