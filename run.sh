@@ -62,11 +62,13 @@ case "$1" in
         echo "  - Alfresco:     http://$BASE_HOST:8080/alfresco"
         echo "  - Share:        http://$BASE_HOST:8080/share"
         echo "  - Content App:  http://$BASE_HOST:8080/"
+        echo "  - MinIO UI:     http://$BASE_HOST:9001"
         echo "  - OOP Health:   http://localhost:9081/actuator/health (solo localhost)"
         echo "  - OOP iTop API: http://$BASE_HOST:8080/alfresco-oop/api/itop/data"
         echo ""
         echo "  Nota: para URL publicas correctas, exportar PUBLIC_HOST antes de up"
         echo "        Ejemplo: PUBLIC_HOST=ec2-xx-xx-xx-xx.compute-1.amazonaws.com $0 up ec2"
+        echo "  Nota: podes sobreescribir passwords con EC2_ALFRESCO_ADMIN_PASSWORD y EC2_MINIO_PASSWORD"
         ;;
     esac
     echo "============================================"

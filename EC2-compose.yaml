@@ -73,8 +73,9 @@ services:
         -Dcollabora.private.url=http://collabora:9980/
         -Dalfresco.public.url=http://${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}:8080/alfresco/
         -Dalfresco.private.url=http://alfresco:8080/alfresco/
-        -Ds3.accessKey=minioadmin
-        -Ds3.secretKey=minioadmin
+        -Dalfresco_user_store.adminpassword=${EC2_ALFRESCO_ADMIN_PASSWORD:-AcsAdm1n!R9p3xK7t}
+        -Ds3.accessKey=admin
+        -Ds3.secretKey=${EC2_MINIO_PASSWORD:-M1n10Ui!R7k2pQ9}
         -Ds3.bucketName=alfresco
         -Ds3.endpoint=http://minio:9000
         -Ds3.regionName=us-east-1
@@ -240,7 +241,7 @@ services:
       - SPRING_ACTIVEMQ_PASSWORD=admin
       - CONTENT_SERVICE_URL=http://alfresco:8080
       - CONTENT_SERVICE_SECURITY_BASICAUTH_USERNAME=admin
-      - CONTENT_SERVICE_SECURITY_BASICAUTH_PASSWORD=admin
+      - CONTENT_SERVICE_SECURITY_BASICAUTH_PASSWORD=${EC2_ALFRESCO_ADMIN_PASSWORD:-AcsAdm1n!R9p3xK7t}
       - ITOP_API_URL=https://itopdes.aguassantafesinas.com.ar/webservices/rest.php
       - ITOP_AUTH_USER=userapint
       - ITOP_AUTH_PWD=Assa@2026
@@ -257,8 +258,8 @@ services:
       - RRHH_DB_NAME=RRHH
       - RRHH_DB_USER=x_fvelaz
       - RRHH_DB_PASSWORD=assa2026
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
+      - S3_ACCESS_KEY=admin
+      - S3_SECRET_KEY=${EC2_MINIO_PASSWORD:-M1n10Ui!R7k2pQ9}
       - S3_BUCKET_NAME=alfresco
       - S3_ENDPOINT=http://minio:9000
       - S3_REGION_NAME=us-east-1
@@ -349,9 +350,11 @@ services:
     platform: linux/amd64
     restart: unless-stopped
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: ${EC2_MINIO_PASSWORD:-M1n10Ui!R7k2pQ9}
     command: server /data --console-address ":9001"
+    ports:
+      - "9001:9001"
     volumes:
       - minio-ec2-volume:/data
     healthcheck:
@@ -368,7 +371,7 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc alias set myminio http://minio:9000 admin ${EC2_MINIO_PASSWORD:-M1n10Ui!R7k2pQ9};
       mc mb --ignore-existing myminio/alfresco;
       mc anonymous set download myminio/alfresco;
       exit 0;
