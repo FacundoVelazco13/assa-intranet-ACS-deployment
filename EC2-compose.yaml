@@ -8,6 +8,10 @@
 #   - Alfresco:    http://PUBLIC_HOST:8080/alfresco
 #   - Share:       http://PUBLIC_HOST:8080/share
 #   - Content App: http://PUBLIC_HOST:8080/
+#
+# Nota:
+# Si PUBLIC_HOST no esta definido, se usa por defecto:
+# ec2-32-195-120-30.compute-1.amazonaws.com
 
 services:
   alfresco:
@@ -52,12 +56,12 @@ services:
         -Dsolr.sharedSecret=secret
         -Dsolr.base.url=/solr
         -Dindex.subsystem.name=solr6
-        -Dshare.host=${PUBLIC_HOST:-localhost}
+        -Dshare.host=${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}
         -Dshare.port=8080
-        -Dalfresco.host=${PUBLIC_HOST:-localhost}
+        -Dalfresco.host=${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}
         -Dalfresco.port=8080
         -Dcsrf.filter.enabled=false
-        -Daos.baseUrlOverwrite=http://${PUBLIC_HOST:-localhost}:8080/alfresco/aos
+        -Daos.baseUrlOverwrite=http://${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}:8080/alfresco/aos
         -Dmessaging.broker.url="failover:(nio://activemq:61616)?timeout=3000&jms.useCompression=true"
         -Dmessaging.broker.username=admin
         -Dmessaging.broker.password=admin
@@ -65,9 +69,9 @@ services:
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
-        -Dcollabora.public.url=http://${PUBLIC_HOST:-localhost}:8080/
+        -Dcollabora.public.url=http://${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}:8080/
         -Dcollabora.private.url=http://collabora:9980/
-        -Dalfresco.public.url=http://${PUBLIC_HOST:-localhost}:8080/alfresco/
+        -Dalfresco.public.url=http://${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}:8080/alfresco/
         -Dalfresco.private.url=http://alfresco:8080/alfresco/
         -Ds3.accessKey=minioadmin
         -Ds3.secretKey=minioadmin
@@ -128,14 +132,14 @@ services:
       - "traefik.http.middlewares.sharefakeauth.basicauth.users=fake:"
       - "traefik.http.routers.proxiedsolrapideny.middlewares=sharefakeauth@docker"
     environment:
-      CSRF_FILTER_ORIGIN: http://${PUBLIC_HOST:-localhost}:8080
-      CSRF_FILTER_REFERER: http://${PUBLIC_HOST:-localhost}:8080/share/.*
+      CSRF_FILTER_ORIGIN: http://${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}:8080
+      CSRF_FILTER_REFERER: http://${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}:8080/share/.*
       REPO_HOST: "alfresco"
       REPO_PORT: "8080"
       JAVA_OPTS: >-
         -XX:MinRAMPercentage=50
         -XX:MaxRAMPercentage=80
-        -Dalfresco.host=${PUBLIC_HOST:-localhost}
+        -Dalfresco.host=${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}
         -Dalfresco.port=8080
         -Dalfresco.context=alfresco
         -Dalfresco.protocol=http
@@ -281,7 +285,7 @@ services:
     restart: unless-stopped
     environment:
       APP_CONFIG_AUTH_TYPE: "BASIC"
-      APP_CONFIG_ECM_HOST: "http://${PUBLIC_HOST:-localhost}:8080"
+      APP_CONFIG_ECM_HOST: "http://${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}:8080"
       APP_CONFIG_ITOP_PEOPLE_ENDPOINT: "/alfresco-oop/api/itop/data?className=Person&mock=true"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
@@ -331,7 +335,7 @@ services:
       extra_params: >
         --o:ssl.enable=false
         --o:ssl.termination=false
-        --o:server_name=${PUBLIC_HOST:-localhost}:8080
+        --o:server_name=${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}:8080
     expose:
       - "9980"
     labels:

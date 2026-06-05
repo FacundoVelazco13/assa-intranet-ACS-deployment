@@ -4,7 +4,7 @@
 set -e
 
 TARGET_ENV="${2:-dev}"
-BASE_HOST="${PUBLIC_HOST:-localhost}"
+BASE_HOST="${PUBLIC_HOST:-ec2-32-195-120-30.compute-1.amazonaws.com}"
 
 case "$TARGET_ENV" in
   dev)
