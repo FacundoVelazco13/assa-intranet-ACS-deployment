@@ -4,6 +4,7 @@
 set -e
 
 TARGET_ENV="${2:-dev}"
+BASE_HOST="${PUBLIC_HOST:-localhost}"
 
 case "$TARGET_ENV" in
   dev)
@@ -14,8 +15,12 @@ case "$TARGET_ENV" in
     FILE="assa-compose.yaml"
     VOLUMENES=(alfresco-data postgres-data solr-data solr-home solr-keystores activemq-conf activemq-data activemq-log)
     ;;
+  ec2)
+    FILE="EC2-compose.yaml"
+    VOLUMENES=(alf-ec2-data postgres-ec2-data solr-ec2-data solr-ec2-home solr-ec2-keystores activemq-ec2-conf activemq-ec2-data activemq-ec2-log openldap-ec2-data openldap-ec2-config phpldapadmin-ec2 minio-ec2-volume)
+    ;;
   *)
-    echo "Uso: $0 {up|down} [dev|prod]"
+    echo "Uso: $0 {up|down|status} [dev|prod|assa|ec2]"
     exit 1
     ;;
 esac
@@ -53,6 +58,16 @@ case "$1" in
         echo "  - OOP Health:   http://localhost:9081/actuator/health (solo localhost)"
         echo "  - OOP iTop API: http://localhost:8080/alfresco-oop/api/itop/data"
         ;;
+      ec2)
+        echo "  - Alfresco:     http://$BASE_HOST:8080/alfresco"
+        echo "  - Share:        http://$BASE_HOST:8080/share"
+        echo "  - Content App:  http://$BASE_HOST:8080/"
+        echo "  - OOP Health:   http://localhost:9081/actuator/health (solo localhost)"
+        echo "  - OOP iTop API: http://$BASE_HOST:8080/alfresco-oop/api/itop/data"
+        echo ""
+        echo "  Nota: para URL publicas correctas, exportar PUBLIC_HOST antes de up"
+        echo "        Ejemplo: PUBLIC_HOST=ec2-xx-xx-xx-xx.compute-1.amazonaws.com $0 up ec2"
+        ;;
     esac
     echo "============================================"
     ;;
@@ -73,7 +88,7 @@ case "$1" in
     echo "============================================"
     ;;
   *)
-    echo "Uso: $0 {up|down|status} [dev|prod]"
+    echo "Uso: $0 {up|down|status} [dev|prod|assa|ec2]"
     exit 1
     ;;
 esac
